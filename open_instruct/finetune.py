@@ -332,6 +332,10 @@ class FlatArguments:
         default=0.5,
         metadata={"help": "Weight for load balancing loss if applicable."},
     )
+    bitlinear: bool = field(
+        default=False,
+        metadata={"help": "Whether to bitlinearize the model or not."},
+    )
     cache_dataset_only: bool = False
     """Immediately exit after caching the dataset"""
     try_auto_save_to_beaker: bool = True
@@ -521,6 +525,11 @@ def main(args: FlatArguments):
     else:
         logger.info("Training new model from scratch")
         model = AutoModelForCausalLM.from_config(config)
+    if args.bitlinear:
+        logger.info(f"Bitlinearizing model to 1.58 bits: {model}")
+        from bitlinear import bitlinearize
+        bitlinearize(model, replacements=[{}])
+        logger.info(f"Bilinear model: {model}")
 
     # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
     # on a small vocab and want a smaller embedding size, remove this test.
