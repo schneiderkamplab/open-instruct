@@ -336,6 +336,10 @@ class FlatArguments:
         default=False,
         metadata={"help": "Whether to bitlinearize the model or not."},
     )
+    aim_repo: str = field(
+        default=".",
+        metadata={"help": "The path to the aim repo to log to when report_to is set to 'aim'."},
+    )
     cache_dataset_only: bool = False
     """Immediately exit after caching the dataset"""
     try_auto_save_to_beaker: bool = True
