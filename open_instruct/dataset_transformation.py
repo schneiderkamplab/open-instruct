@@ -50,7 +50,7 @@ from typing import Any, Dict, List, Optional
 
 import torch
 import transformers
-from datasets import Dataset, concatenate_datasets, load_dataset
+from datasets import Dataset, concatenate_datasets, load_dataset, load_from_disk
 from huggingface_hub import HfApi, ModelCard, revision_exists
 from rich.console import Console
 from rich.text import Text
@@ -634,10 +634,18 @@ class DatasetTransformationCache:
         repo_name = f"{self.hf_entity}/dataset-mix-cached"
 
         # Check if the revision exists
-        if revision_exists(repo_name, config_hash, repo_type="dataset"):
+        if self.hf_entity != "local" and revision_exists(repo_name, config_hash, repo_type="dataset"):
             print(f"✅ Found cached dataset at https://huggingface.co/datasets/{repo_name}/tree/{config_hash}")
             # Use the split from the first dataset config as default
             return load_dataset(repo_name, split=dcs[0].dataset_split, revision=config_hash)
+
+        # Check if the cache exists locally
+        if self.hf_entity == "local":
+            repo_name = f"{dcs[0].dataset_name}_{config_hash}"
+            print(f"Checking locally for {repo_name}...")
+            if os.path.exists(repo_name):
+                print(f"✅ Found cached dataset at {repo_name}")
+                return load_from_disk(repo_name)
 
         print(f"Cache not found, transforming datasets...")
 
@@ -649,6 +657,12 @@ class DatasetTransformationCache:
 
         # Combine datasets
         combined_dataset = concatenate_datasets(transformed_datasets)
+
+        # Save to disk if local
+        if self.hf_entity == "local":
+            combined_dataset.save_to_disk(repo_name)
+            # NOTE: Load the dataset again to make sure it's been saved correctly
+            return load_from_disk(repo_name)
 
         # Push to hub with config hash as revision
         combined_dataset.push_to_hub(

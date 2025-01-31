@@ -641,11 +641,23 @@ def main(args: FlatArguments):
         experiment_config["lr_scheduler_type"] = experiment_config["lr_scheduler_type"]
 
         # (Optional) Ai2 internal tracking
-        if args.wandb_entity is None:
+        if args.report_to == "wandb" and args.wandb_entity is None:
             args.wandb_entity = maybe_use_ai2_wandb_entity()
         if is_beaker_job():
             experiment_config.update(vars(beaker_config))
-        accelerator.init_trackers(
+        if args.report_to == "aim":
+            accelerator.init_trackers(
+                "open_instruct_internal",
+                experiment_config,
+                init_kwargs={
+                    "aim": {
+                        "repo": args.aim_repo,
+                        "experiment": args.exp_name,
+                    }
+                },
+            )
+        if args.report_to == "wandb":
+            accelerator.init_trackers(
             "open_instruct_internal",
             experiment_config,
             init_kwargs={
@@ -655,8 +667,8 @@ def main(args: FlatArguments):
                     "tags": [args.exp_name] + get_wandb_tags(),
                 }
             },
-        )
-        wandb_tracker = accelerator.get_tracker("wandb")
+            )
+            wandb_tracker = accelerator.get_tracker("wandb")
 
     # Train!
     total_batch_size = args.per_device_train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
