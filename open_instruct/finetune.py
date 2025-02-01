@@ -654,22 +654,21 @@ def main(args: FlatArguments):
         experiment_config["lr_scheduler_type"] = experiment_config["lr_scheduler_type"]
 
         # (Optional) Ai2 internal tracking
-        if args.report_to == "wandb" and args.wandb_entity is None:
+        if "wandb" in args.report_to and args.wandb_entity is None:
             args.wandb_entity = maybe_use_ai2_wandb_entity()
         if is_beaker_job():
             experiment_config.update(vars(beaker_config))
-        if args.report_to == "aim":
+        if "aim" in args.report_to:
             accelerator.init_trackers(
-                "open_instruct_internal",
+                args.aim_repo,
                 experiment_config,
                 init_kwargs={
                     "aim": {
-                        "repo": args.aim_repo,
                         "experiment": args.exp_name,
                     }
                 },
             )
-        if args.report_to == "wandb":
+        if "wandb" in args.report_to:
             accelerator.init_trackers(
             "open_instruct_internal",
             experiment_config,
