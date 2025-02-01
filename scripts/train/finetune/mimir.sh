@@ -39,6 +39,6 @@ accelerate launch \
     --timeout 86400 \
     --hf_entity local \
     --checkpointing_steps 100 \
-    --keep_last_n_checkpoints 1000 \
+    --keep_last_n_checkpoints -1 \
     --aim_repo $WORK_DIR/open-instruct \
     --seed 9313
